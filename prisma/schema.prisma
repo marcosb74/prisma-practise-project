@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String           @id @default(uuid()) //name - type - fieldmodifier (optional) - attr. always start with @
+  // id Int @id @default(autoincrement())
+  name              String
+  age               Int
+  email             String           @unique
+  role              Role             @default(BASIC)
+  //largeNumber BigInt
+  //preferences Json // not all db support this, pg does.
+  //blob Bytes
+  //notherBlod Unsupported("")
+  writtenPosts      Post[]           @relation("Writtenposts") //field type modifier, ? also exists 
+  favoritePosts     Post[]           @relation("FavoritePosts") //field type modifier, ? also exists 
+  userPreferences   UserPreferences? @relation(fields: [userPreferencesId], references: [id])
+  userPreferencesId String?          @unique
+
+  @@unique([age, name]) //can't have 2 users that have the same name and same age
+  @@index([email]) // block level attrs
+}
+
+model UserPreferences {
+  id           String  @id @default(uuid())
+  emailUpdates Boolean
+  user         User?
+}
+
+model Post {
+  id            String     @id @default(uuid())
+  title         String
+  averageRating Float
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  author        User       @relation("Writtenposts", fields: [authorId], references: [id])
+  authorId      String
+  favoritedBy   User?      @relation("FavoritePosts", fields: [favoritedById], references: [id])
+  favoritedById String?
+  categories    Category[]
+
+  //@@id([title,authorId]) // these 2 combined represent the id
+}
+
+model Category {
+  id    String @id @default(uuid())
+  name  String @unique
+  posts Post[]
+}
+
+enum Role {
+  BASIC
+  ADMIN
+}
